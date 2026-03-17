@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="hi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="music.jpg">
+    <title>music-player</title>
+    <style>
+        /* Hide Scrollbar for all browsers */
+        ::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        body {
+            -ms-overflow-style: none;
+            /* IE & Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        :root {
+            --primary: #1db954;
+            --bg: #0b0b0b;
+            --card: #181818;
+            --card-hover: #282828;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: white;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: white;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        /* Search */
+        .search-container {
+            position: sticky;
+            top: 0;
+            margin-right: 10px;
+            margin-left: 10px;
+            z-index: 2000;
+            background: var(--bg);
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 30px;
+            border: none;
+            background: #242424;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        #resultsBox {
+            position: absolute;
+            width: 100%;
+            background: #181818;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            margin-top: 5px;
+            border: 1px solid #333;
+            z-index: 2001;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #282828;
+            transition: 0.2s;
+        }
+
+        .search-item:hover {
+            background: rgba(29, 185, 84, 0.1);
+            border-left: 3px solid var(--primary);
+            padding-left: 12px;
+        }
+
+        .search-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .search-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .search-info b {
+            display: block;
+            color: white;
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-artist {
+            color: #b3b3b3;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .play-icon {
+            background: var(--primary);
+            color: black;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* Sections */
+        .section-wrapper {
+            position: relative;
+            /* Ye buttons ko section ke andar lock kar dega */
+            padding: 0 10px;
+            /* Thoda space side mein */
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            margin: 0 0 15px 5px;
+            color: #fff;
+        }
+
+        .scroll-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            scrollbar-width: none;
+            padding: 5px;
+            scroll-behavior: smooth;
+        }
+
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Song Card */
+        .song-card {
+            min-width: 140px;
+            max-width: 140px;
+            background: var(--card);
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .song-card:hover {
+            background: var(--card-hover);
+            transform: translateY(-5px);
+        }
+
+        .song-card img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-bottom: 8px;
+        }
+
+        .song-card p {
+            margin: 0 0 5px 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .song-card .song-desc {
+            font-size: 0.75rem;
+            color: #b3b3b3;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 8px;
+        }
+
+        /* Container jo button ko card ke niche center karega */
+        .card-btn-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 15px;
+            padding-bottom: 5px;
+        }
+
+        /* Premium Play Button */
+        .play-btn-large {
+            background: #1db954;
+            /* Solid Green */
+            border: none;
+            border-radius: 50px;
+            /* Perfect Pill Shape */
+            padding: 8px 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Shadow taaki button 'floating' lage */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Hover par thoda upar uthega aur chamkega */
+        .play-btn-large:hover {
+            transform: scale(1.08) translateY(-2px);
+            background: #1ed760;
+            box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
+        }
+
+        /* Button Text */
+        .btn-text {
+            color: #000;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Red Play Triangle (Modern & Sharp) */
+        .btn-triangle {
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-left: 12px solid #e91e63;
+            /* Thoda vibrant red/pinkish red */
+            filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.2));
+        }
+
+        .play-btn-small {
+            background: var(--primary);
+            color: black;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: 0.2s;
+            align-self: center;
+        }
+
+        .play-btn-small:hover {
+            transform: scale(1.1);
+        }
+
+        .add-btn {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: var(--primary);
+            color: black;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .song-card:hover .add-btn {
+            display: flex;
+        }
+
+        @media (max-width: 768px) {
+            .add-btn {
+                display: flex;
+                width: 40px;
+                height: 40px;
+                top: 10px;
+                right: 10px;
+            }
+        }
+
+        /* Playlist Box */
+        .playlist-box {
+            background: #121212;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .playlist-header {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        .playlist-header input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid #333;
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: bold;
+            outline: none;
+            padding: 5px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .playlist-header input:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        /* 1. Base style for all devices */
+        .scroll-btn {
+            position: absolute;
+            top: 55%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #1db954;
+            cursor: pointer;
+            z-index: 999;
+            display: none;
+            /* By default hide */
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        /* 2. PC/Desktop: Jab screen 1024px se badi ho tabhi buttons dikhne chahiye */
+        @media (min-width: 1025px) {
+            .scroll-btn.active {
+                display: flex !important;
+                /* JS ki active class yahan kaam karegi */
+            }
+
+            .scroll-btn.left {
+                left: 15px;
+            }
+
+            .scroll-btn.right {
+                right: 15px;
+            }
+        }
+
+        /* 3. Mobile aur Tablet: 1024px se choti screen par buttons hamesha hide rahenge */
+        @media (max-width: 1024px) {
+            .scroll-btn {
+                display: none !important;
+                /* Ye JS ke force-display ko bhi rok dega */
+            }
+        }
+
+        /* Player */
+        .bottom-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            border-top: 1px solid #222;
+            padding: 15px 0;
+            display: none;
+            z-index: 3000;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+            gap: 15px;
+        }
+
+        .song-info {
+            display: flex;
+            align-items: center;
+            width: 30%;
+            gap: 12px;
+        }
+
+        .song-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+        }
+
+        .song-details {
+            overflow: hidden;
+        }
+
+        .song-details h4 {
+            margin: 0;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .controls-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .play-pause {
+            background: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-size: 1.2rem;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        #pBar {
+            width: 100%;
+            max-width: 500px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            height: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .song-info {
+                width: 60%;
+            }
+
+            .btn-row {
+                gap: 15px;
+            }
+
+            .playlist-header input {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* --- Ultra-Modern Footer Style --- */
+        .main-footer {
+            background: linear-gradient(to top, #000000, #0a0a0a);
+            padding: 70px 20px 40px;
+            margin-top: 100px;
+            border-top: 1px solid rgba(29, 185, 84, 0.15);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* --- About Section (Modern Accordion) --- */
+        .about-section {
+            max-width: 900px;
+            margin: 0 auto 60px;
+        }
+
+        .about-section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #1db954 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+        }
+
+        .about-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            margin-bottom: 15px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .about-item:hover {
+            border-color: rgba(29, 185, 84, 0.4);
+            background: rgba(29, 185, 84, 0.04);
+        }
+
+        .about-header {
+            padding: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #f1f1f1;
+        }
+
+        .about-header span {
+            color: #1db954;
+            transition: 0.4s ease;
+        }
+
+        .about-content {
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 24px;
+            color: #a0a0a0;
+            line-height: 1.7;
+            font-size: 1rem;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .about-item.active .about-content {
+            max-height: 300px;
+            padding-bottom: 24px;
+        }
+
+        /* --- Responsive Footer Grid --- */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            /* Center section wider for long names */
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 30px;
+            padding-top: 50px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .footer-title {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: #555;
+            margin-bottom: 25px;
+            font-weight: 900;
+        }
+
+        /* --- Social Section (Left) --- */
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            text-decoration: none;
+            background: #121212;
+            padding: 14px 22px;
+            border-radius: 12px;
+            width: fit-content;
+            font-size: 0.95rem;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .social-links a:hover {
+            background: #1db954;
+            color: #000;
+            font-weight: bold;
+            transform: translateX(10px);
+        }
+
+        /* --- Projects Section (Center) - Fixed Width Issue --- */
+        .bot-card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .bot-card a {
+            text-decoration: none;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .bot-card a:last-child {
+            margin-bottom: 0;
+        }
+
+        .bot-name {
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+            color: #efefef;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            /* Prevents text from breaking into 2 lines */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* Adds ... if name is TOO long */
+            transition: 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .bot-name:hover {
+            background: rgba(29, 185, 84, 0.1);
+            color: #1db954;
+            border-color: rgba(29, 185, 84, 0.3);
+            padding-left: 28px;
+        }
+
+        /* --- Right Section (Bhaichara) --- */
+        .footer-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: right;
+        }
+
+        .bhaichara-link {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+
+        .bhaichara-link:hover {
+            color: #1db954;
+            text-shadow: 0 0 25px rgba(29, 185, 84, 0.7);
+        }
+
+        .copyright {
+            color: #444;
+            font-size: 0.85rem;
+            margin-top: 20px;
+        }
+
+        /* --- Mobile Fix --- */
+        @media (max-width: 900px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 40px;
+            }
+
+            .social-links {
+                align-items: center;
+            }
+
+            .footer-right {
+                text-align: center;
+                align-items: center;
+            }
+
+            .bot-name {
+                white-space: normal;
+            }
+
+            /* Allow break on mobile if needed */
+        }
+
+        @media (max-width: 500px) {
+            .bot-name {
+                font-size: 0.85rem !important;
+                /* छोटा टेक्स्ट */
+                padding: 12px 10px !important;
+                white-space: normal !important;
+                /* मोबाइल पर नाम दो लाइन में आने दें */
+                line-height: 1.4;
+            }
+
+            .footer-grid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+
+        /* Search Container ko relative banaya taaki icons position ho sakein */
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 14px 45px 14px 50px;
+            /* Left side (50px) aur Right side (45px) mein space chhoda icons ke liye */
+            border-radius: 30px;
+            border: none;
+            background: #242424;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        #searchInput:focus {
+            background: #2a2a2a;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        /* Music icon ke wrapper (link) ke liye styling */
+        #homeLink {
+            display: flex;
+            align-items: center;
+            position: absolute;
+            left: 12px;
+            z-index: 10;
+            /* Taaki click input ke upar kaam kare */
+        }
+
+        /* Icon ki styling wahi rahegi jo pehle thi, bas position absolute ab link pe hai */
+        .search-left-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        /* Right side Search Icon (SVG use kiya hai taaki image load na karni pade) */
+        .search-right-icon {
+            position: absolute;
+            right: 15px;
+            width: 20px;
+            height: 20px;
+            fill: #b3b3b3;
+            pointer-events: none;
+        }
+
+        /* Mobile Responsive Play Button */
+        @media (max-width: 600px) {
+
+            /* Main Play Button (Pill Shape) */
+            .play-btn-large {
+                padding: 6px 14px !important;
+                /* साइज थोड़ा छोटा */
+                min-width: 80px !important;
+                height: 32px !important;
+            }
+
+            .btn-text {
+                font-size: 10px !important;
+                /* छोटा फॉन्ट */
+                letter-spacing: 1px !important;
+            }
+
+            .btn-triangle {
+                border-left-width: 10px !important;
+                /* ट्रायंगल छोटा */
+                border-top-width: 6px !important;
+                border-bottom-width: 6px !important;
+                margin-left: 6px !important;
+            }
+
+            /* Music Player Bar (Bottom Bar) */
+            .player-controls {
+                gap: 10px !important;
+                /* बटन के बीच की दूरी कम */
+            }
+
+            .song-info b {
+                font-size: 14px !important;
+                /* गाने का नाम छोटा */
+            }
+
+            /* Search results में बटन को और छोटा करना */
+            .search-item .play-btn-large {
+                transform: scale(0.75);
+                margin-right: -10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="search-container">
+        <div class="search-input-wrapper">
+            <a href="/" id="homeLink" title="Home">
+                <img src="music.jpg" class="search-left-icon" alt="music">
+            </a>
+
+            <input type="text" id="searchInput" placeholder="Search songs, albums..." autocomplete="off">
+
+            <svg class="search-right-icon" viewBox="0 0 24 24">
+                <path
+                    d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+            </svg>
+        </div>
+        <div id="resultsBox"></div>
+    </div>
+    <div id="resultsBox"></div>
+    </div>
+    <div class="body">
+
+        <div class="section-wrapper">
+            <h2>Trending Hindi</h2>
+            <button class="scroll-btn left" id="trL" onclick="scr('trList', -400)">❮</button>
+            <button class="scroll-btn right" id="trR" onclick="scr('trList', 400)">❯</button>
+            <div class="scroll-container" id="trList" onscroll="uBtn('trList','trL','trR')"></div>
+        </div>
+
+        <div class="section-wrapper" id="recentSec" style="display:none;">
+            <h2>Recently Played</h2>
+            <button class="scroll-btn left" id="recentL" onclick="scr('recentList', -400)">❮</button>
+            <button class="scroll-btn right" id="recentR" onclick="scr('recentList', 400)">❯</button>
+            <div class="scroll-container" id="recentList" onscroll="uBtn('recentList','recentL','recentR')"></div>
+        </div>
+
+        <div class="section-wrapper">
+            <h2>Hindi Hits</h2>
+            <button class="scroll-btn left" id="hiL" onclick="scr('hiList', -400)">❮</button>
+            <button class="scroll-btn right" id="hiR" onclick="scr('hiList', 400)">❯</button>
+            <div class="scroll-container" id="hiList" onscroll="uBtn('hiList','hiL','hiR')"></div>
+        </div>
+
+        <div class="section-wrapper">
+            <h2>English Pop</h2>
+            <button class="scroll-btn left" id="enL" onclick="scr('enList', -400)">❮</button>
+            <button class="scroll-btn right" id="enR" onclick="scr('enList', 400)">❯</button>
+            <div class="scroll-container" id="enList" onscroll="uBtn('enList','enL','enR')"></div>
+        </div>
+
+        <div id="player" class="bottom-player">
+            <div class="player-inner">
+                <div class="song-info">
+                    <img id="pImg" src="">
+                    <div class="song-details">
+                        <h4 id="pTitle"></h4>
+                        <p id="pArtist" style="margin:0; font-size:0.7rem; color:gray;"></p>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="btn-row">
+                        <button class="nav-btn" onclick="prev()">⏮</button>
+                        <button class="play-pause" id="playBtn">▶</button>
+                        <button class="nav-btn" onclick="next()">⏭</button>
+                    </div>
+                    <input type="range" id="pBar" value="0" step="0.1">
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <audio id="audio" preload="auto"></audio>
+
+    <script>
+        const audio = document.getElementById('audio');
+        const playBtn = document.getElementById('playBtn');
+        let currentList = [], currentIndex = -1;
+        let trData = [], hiData = [], enData = [], sData = [], songData = {};
+        let displayedSongIds = new Set(); // Track displayed songs to avoid duplicates
+        let currentType = ''; // Ye line add karein navigation track karne ke liye
+
+        // For infinite scroll
+        let allData = { tr: [], hi: [], en: [] }; // All loaded songs
+        let displayedData = { tr: [], hi: [], en: [] }; // Currently displayed songs
+        let isLoading = { tr: false, hi: false, en: false }; // Prevent multiple loads
+        let hasMore = { tr: true, hi: true, en: true }; // More songs available
+
+        audio.onstalled = () => console.log("Network slow hai, loading ruk gayi!");
+        audio.onwaiting = () => console.log("Buffering ho rahi hai...");
+
+        // Shuffle function to randomize songs on each refresh
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Filter out already displayed songs
+        function filterUniqueSongs(data, limit = 20) {
+            const unique = [];
+            for (const song of data) {
+                if (!displayedSongIds.has(song.id) && unique.length < limit) {
+                    unique.push(song);
+                    displayedSongIds.add(song.id);
+                }
+            }
+            return unique;
+        }
+
+        // --- Data Loading ---
+        async function loadData(q, cId, type) {
+            const res = await fetch(`https://saavn.sumit.co/api/search/songs?query=${q}&limit=100`);
+            const json = await res.json();
+            if (json.data?.results) {
+                let data = json.data.results;
+                // Shuffle songs so different songs appear on each refresh
+                data = shuffleArray(data);
+                // Store all data for infinite scroll
+                allData[type] = data;
+
+                // Filter out duplicates and get unique songs
+                let firstBatch = filterUniqueSongs(data, 20);
+                displayedData[type] = firstBatch;
+
+                if (type === 'tr') trData = firstBatch;
+                if (type === 'hi') hiData = firstBatch;
+                if (type === 'en') enData = firstBatch;
+
+                firstBatch.forEach(s => songData[s.id] = s);
+
+                const container = document.getElementById(cId);
+                container.innerHTML = firstBatch.map((s, i) => `
+
+<div class="song-card">
+    <img src="${s.image[2].url}" onclick="play('${s.id}', '${type}', ${i})" style="cursor: pointer;">
+    <p>${s.name}</p>
+    <div class="song-desc">${s.primaryArtists || 'Unknown'}</div>
+    
+    <div class="card-btn-container">
+        <button class="play-btn-large" onclick="event.stopPropagation(); play('${s.id}', '${type}', ${i})">
+            <span class="btn-text">PLAY</span>
+            <div class="btn-triangle"></div> </button>
+    </div>
+</div>
+`
+                ).join('');
+
+                // Add infinite scroll listener
+                attachScrollListener(cId, type);
+                setTimeout(() => uBtn(cId, cId.replace('List', 'L'), cId.replace('List', 'R')), 500);
+            }
+        }
+
+        // Infinite scroll listener
+        function attachScrollListener(cId, type) {
+            const container = document.getElementById(cId);
+            if (!container) return;
+
+            container.onscroll = function () {
+                // Check if user scrolled to 80% of the container
+                if (container.scrollLeft + container.clientWidth >= container.scrollWidth * 0.8) {
+                    loadMoreSongs(cId, type);
+                }
+            };
+        }
+
+        // Load more songs dynamically
+        async function loadMoreSongs(cId, type) {
+            if (isLoading[type] || !hasMore[type] || displayedSongIds.size >= allData[type].length) {
+                hasMore[type] = false;
+                return;
+            }
+
+            isLoading[type] = true;
+
+            // Get next batch of unique songs
+            const newSongs = [];
+            for (const song of allData[type]) {
+                if (!displayedSongIds.has(song.id) && newSongs.length < 10) {
+                    newSongs.push(song);
+                    displayedSongIds.add(song.id);
+                }
+            }
+
+            if (newSongs.length === 0) {
+                hasMore[type] = false;
+                isLoading[type] = false;
+                return;
+            }
+
+            // Append new songs to container
+            const container = document.getElementById(cId);
+            newSongs.forEach(s => songData[s.id] = s);
+
+            const html = newSongs.map((s, i) => `
+                <div class="song-card">
+                    <img src="${s.image[2].url}" onclick="play('${s.id}', '${type}', ${displayedData[type].length + i})" style="cursor: pointer;">
+                    <p>${s.name}</p>
+                    <div class="song-desc">${s.primaryArtists || 'Unknown'}</div>
+                    <button class="play-btn-small" onclick="event.stopPropagation(); play('${s.id}', '${type}', ${displayedData[type].length + i})">▶</button>
+                </div>
+            `).join('');
+
+            container.innerHTML += html;
+            displayedData[type] = displayedData[type].concat(newSongs);
+
+            isLoading[type] = false;
+        }
+
+        // --- Playback Logic ---
+        // --- FIXED PLAYBACK LOGIC ---
+        async function play(id, type, index) {
+            // Agar manually click kiya hai toh type update karein
+            if (type !== 'nav') {
+                currentType = type;
+            }
+
+            // Category ke hisaab se sahi list select karna
+            if (currentType === 'tr') currentList = displayedData.tr;
+            else if (currentType === 'hi') currentList = displayedData.hi;
+            else if (currentType === 'en') currentList = displayedData.en;
+            else if (currentType === 'search') currentList = sData;
+            else if (currentType === 'recent') currentList = JSON.parse(localStorage.getItem('rec') || '[]');
+
+            currentIndex = index;
+            const res = await fetch(`https://saavn.sumit.co/api/songs?ids=${id}`);
+            const json = await res.json();
+            const s = json.data[0];
+
+            document.getElementById('pImg').src = s.image[2].url;
+            document.getElementById('pTitle').innerText = s.name;
+            document.getElementById('pArtist').innerText = s.primaryArtists;
+            audio.src = s.downloadUrl[s.downloadUrl.length - 1].url;
+            document.getElementById('player').style.display = 'block';
+            audio.play();
+            playBtn.innerText = '⏸';
+            saveRec(s);
+        }
+
+        function next() {
+            if (currentIndex < currentList.length - 1) {
+                play(currentList[currentIndex + 1].id, 'nav', currentIndex + 1);
+            }
+        }
+
+        function prev() {
+            if (currentIndex > 0) {
+                play(currentList[currentIndex - 1].id, 'nav', currentIndex - 1);
+            }
+        }
+
+        // --- Playlist & Recent (REMOVED) ---
+
+        function saveRec(s) {
+            let r = JSON.parse(localStorage.getItem('rec') || '[]');
+            r = [s, ...r.filter(x => x.id !== s.id)].slice(0, 15);
+            localStorage.setItem('rec', JSON.stringify(r));
+            showRec();
+        }
+
+        function showRec() {
+            const r = JSON.parse(localStorage.getItem('rec') || '[]');
+            if (r.length > 0) {
+                document.getElementById('recentSec').style.display = 'block';
+                r.forEach(s => songData[s.id] = s);
+                document.getElementById('recentList').innerHTML = r.map((s, i) => `
+            <div class="song-card">
+                <img src="${s.image[2].url}" onclick="play('${s.id}', 'recent', ${i})" style="cursor: pointer;">
+                <p>${s.name}</p>
+                <div class="song-desc">${s.primaryArtists || 'Unknown'}</div>
+                
+                <div class="card-btn-container">
+                    <button class="play-btn-large" onclick="event.stopPropagation(); play('${s.id}', 'recent', ${i})">
+                        <span class="btn-text">PLAY</span>
+                        <div class="btn-triangle"></div>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+                setTimeout(() => uBtn('recentList', 'recentL', 'recentR'), 100);
+            }
+        }
+
+        // --- Utils ---
+        function scr(id, d) {
+            document.getElementById(id).scrollBy({ left: d, behavior: 'smooth' });
+
+            // If scrolling right, trigger infinite scroll for music sections
+            if (d > 0) {
+                const type = id === 'trList' ? 'tr' : id === 'hiList' ? 'hi' : id === 'enList' ? 'en' : null;
+                if (type) {
+                    setTimeout(() => loadMoreSongs(id, type), 200);
+                }
+            }
+        }
+        function uBtn(id, l, r) {
+            const e = document.getElementById(id);
+            const leftBtn = document.getElementById(l);
+            const rightBtn = document.getElementById(r);
+
+            if (!e || !leftBtn || !rightBtn) return;
+
+            // Agar container scroll hua hai toh left button dikhao
+            if (e.scrollLeft > 5) {
+                leftBtn.classList.add('active');
+            } else {
+                leftBtn.classList.remove('active');
+            }
+
+            // Agar aur scroll karne ki jagah bachi hai toh right button dikhao
+            if (e.scrollLeft + e.clientWidth < e.scrollWidth - 5) {
+                rightBtn.classList.add('active');
+            } else {
+                rightBtn.classList.remove('active');
+            }
+        }
+
+        document.getElementById('searchInput').oninput = async (e) => {
+            const q = e.target.value;
+            const resultsBox = document.getElementById('resultsBox');
+            if (q.length < 2) return resultsBox.style.display = 'none';
+            try {
+                const res = await fetch(`https://saavn.sumit.co/api/search/songs?query=${q}`);
+                const json = await res.json();
+                sData = json.data.results;
+                sData.forEach(s => songData[s.id] = s);
+                resultsBox.style.display = 'block';
+                resultsBox.innerHTML = sData.map((s, i) => `
+            <div class="search-item" onclick="play('${s.id}', 'search', ${i}); document.getElementById('resultsBox').style.display='none';">
+                <img src="${s.image[0].url}">
+                <div class="search-info">
+                    <b>${s.name}</b>
+                    <div class="search-artist">${s.primaryArtists || 'Unknown Artist'}</div>
+                </div>
+                
+                <button class="play-btn-large" style="padding: 5px 15px; transform: scale(0.8);">
+                    <span class="btn-text">PLAY</span>
+                    <div class="btn-triangle" style="border-left-width: 10px; border-top-width: 6px; border-bottom-width: 6px;"></div>
+                </button>
+            </div>
+        `).join('');
+            } catch (e) {
+                console.error('Search error:', e);
+            }
+        };
+
+        playBtn.onclick = () => audio.paused ? (audio.play(), playBtn.innerText = '⏸') : (audio.pause(), playBtn.innerText = '▶');
+        audio.ontimeupdate = () => document.getElementById('pBar').value = (audio.currentTime / audio.duration) * 100;
+        document.getElementById('pBar').oninput = (e) => audio.currentTime = (e.target.value / 100) * audio.duration;
+        audio.onended = next;
+
+        window.onload = () => {
+            displayedSongIds.clear(); // Reset on page load
+            allData = { tr: [], hi: [], en: [] };
+            displayedData = { tr: [], hi: [], en: [] };
+            isLoading = { tr: false, hi: false, en: false };
+            hasMore = { tr: true, hi: true, en: true };
+            loadData('trending hindi', 'trList', 'tr');
+            loadData('latest hindi hits', 'hiList', 'hi');
+            loadData('english pop', 'enList', 'en');
+            showRec();
+        };
+        function toggleAbout(element) {
+            const parent = element.parentElement;
+
+            // Pehle se khule hue accordions ko band karne ke liye (Optional)
+            // document.querySelectorAll('.about-item').forEach(item => {
+            //    if(item !== parent) item.classList.remove('active');
+            // });
+
+            parent.classList.toggle('active');
+
+            // Arrow rotate logic
+            const arrow = element.querySelector('span');
+            if (parent.classList.contains('active')) {
+                arrow.style.transform = 'rotate(90deg)';
+            } else {
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+
+    </div>
+    <footer class="main-footer">
+        <div class="about-section">
+            <h2>About Website</h2>
+
+            <div class="about-item">
+                <div class="about-header" onclick="toggleAbout(this)">
+                    Why choose this Music Player? <span>➜</span>
+                </div>
+                <div class="about-content">
+                    Experience lag-free streaming with high-bitrate audio. Our minimalist design ensures you focus only
+                    on the music you love.
+                </div>
+            </div>
+
+            <div class="about-item">
+                <div class="about-header" onclick="toggleAbout(this)">
+                    Developer Mission <span>➜</span>
+                </div>
+                <div class="about-content">
+                    To build an open-source platform that brings premium features to everyone for free.
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-grid">
+            <div class="footer-left">
+                <span class="footer-title">Stay Connected</span>
+                <div class="social-links">
+                    <a target="_blank" href="https://t.me/BeDestroyer"><img width="20px" src="telegram.png"
+                            alt="">Telegram</a>
+                    <a target="_blank" href="https://www.instagram.com/ixfucker_01/"><img width="20px"
+                            src="instagram.png" alt="">Instagram</a>
+                </div>
+            </div>
+
+            <div class="footer-center">
+                <span class="footer-title">Our Projects</span>
+                <div class="bot-card">
+                    <a target="_blank" href="https://t.me/qtalisabot">
+                        <div class="bot-name">✨ ˹𝐀ʟɪꜱᴀ ꭙ 𝐌ᴜꜱɪᴄ ♪˼ [ ɴᴏ ᴀᴅs ]™</div>
+                    </a>
+                    <a target="_blank" href="https://t.me/ANIYA_MUSIC_BOT">
+                        <div class="bot-name">🎧 ˹ 𝚲𝛈𝛊፝֟𝛄𝛂ㅤꭙ ㅤ𝐌ᴜꜱɪᴄ ♪˼</div>
+                    </a>
+                    <a target="_blank" href="https://t.me/YUKIMUSiICBOT">
+                        <div class="bot-name">🔥 ─˹𝐘ᴜᴋɪ ꭙ ᴍᴜsɪᴄ˼─</div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-right">
+                <div>
+                    <span class="footer-title">Join Us</span>
+                    <a target="_blank" href="https://t.me/ll_BHAICHARA_ON_TOP_ll" class="bhaichara-link">BHAICHARA
+                        🔗</a>
+                </div>
+                <p class="copyright">© 2026 • Music Player <br> All Rights Reserved</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>
