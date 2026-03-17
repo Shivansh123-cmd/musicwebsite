@@ -5,7 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="music.jpg">
-    <title>Sonic-player</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>music-player</title>
     <style>
         /* Hide Scrollbar for all browsers */
         ::-webkit-scrollbar {
@@ -17,6 +20,7 @@
             -ms-overflow-style: none;
             /* IE & Edge */
             scrollbar-width: none;
+            font-family: 'Poppins', sans-serif;
             /* Firefox */
         }
 
@@ -835,7 +839,10 @@
 
     <div class="search-container">
         <div class="search-input-wrapper">
+            <a href="sahi.html" id="homeLink" title="Home">
                 <img src="music.jpg" class="search-left-icon" alt="music">
+            </a>
+
             <input type="text" id="searchInput" placeholder="Search songs, albums..." autocomplete="off">
 
             <svg class="search-right-icon" viewBox="0 0 24 24">
